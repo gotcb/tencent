@@ -361,7 +361,7 @@ func (tcb *Tcb) DeleteMany(collectionName, query, transactionID string) (string,
 	build.WriteString(tcb.Context.Envid)
 	build.WriteString("/databases/")
 	build.WriteString(collectionName)
-	build.WriteString("/documents:deleteOne?transactionId=")
+	build.WriteString("/documents:deleteMany?transactionId=")
 	build.WriteString(transactionID)
 	urls := build.String()
 
