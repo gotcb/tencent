@@ -24,6 +24,13 @@ type Body struct {
 	Data  string `json:"data,omitempty"`
 }
 
+// type Inv struct {
+// 	Data Id `json:"data,omitempty"`
+// }
+// type Id struct {
+// 	Id string `json:"id,omitempty"`
+// }
+
 // 批量插入文档
 type Data struct {
 	InsertDatas []string `json:"data,omitempty"`
@@ -243,7 +250,7 @@ func (tcb *Tcb) Find(collectionName, query, limit, skip, fields, sort, transacti
 	return data, nil
 }
 
-//Count 查询数据库
+//Count 查询数据库数量
 func (tcb *Tcb) Count(collectionName, query, transactionID string) (string, error) {
 
 	var build strings.Builder
@@ -433,11 +440,33 @@ func (tcb *Tcb) RollbackTransaction(collectionName, transactionID string) (strin
 	build.WriteString("/transaction/")
 	build.WriteString(transactionID)
 	build.WriteString(":rollback")
-
 	urls := build.String()
 
 	util := util.NewUtil(tcb.Context)
 	datast, err := util.SendPostURL("POST", urls, nil)
+	if err != nil {
+		return "", err
+	}
+	return datast, nil
+}
+
+//函数执行
+func (tcb *Tcb) Invoke(functionName string, data []byte) (string, error) {
+
+	var build strings.Builder
+	build.WriteString(invokeCloudFunctionURL)
+	build.WriteString(tcb.Context.Envid)
+	build.WriteString("/functions/")
+	build.WriteString(functionName)
+	build.WriteString(":invoke")
+	urls := build.String()
+
+	// ques, err := json.Marshal(data)
+	// if err != nil {
+	// 	return "", err
+	// }
+	util := util.NewUtil(tcb.Context)
+	datast, err := util.SendPostURL("POST", urls, data)
 	if err != nil {
 		return "", err
 	}

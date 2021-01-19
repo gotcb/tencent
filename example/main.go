@@ -259,5 +259,20 @@ func main() {
 	// 	fmt.Println(err)
 	// }
 	// fmt.Println(data)
+	
+	// 函数执行
+	//var g Inv
+	//g.Data.Id = "990e1249-5388-4263-ba20-07e98f21610e"
+	//g.Data = aaa
+	//ques, err := json.Marshal(g)
+	//if err != nil {
+	//	fmt.Printf("json.Marshal%v", err)
+	//}
+	//fmt.Println(string(ques))
+	//data, err := tcb.Invoke("getmationinfo", ques)
+	//if err != nil {
+	//	fmt.Println(err)
+	//}
+	//fmt.Println(data)
 
 }
