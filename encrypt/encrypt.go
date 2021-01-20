@@ -48,8 +48,37 @@ func GetKey(openid string) (int, []byte) {
 }
 
 //ASEEncrypt 数据加密
-func ASEEncrypt(plaintext []byte, openid string) ([]byte, int, error) {
+func ASEEncrypt(plaintext []byte, openid string) (string, int, error) {
 
+	s := openid
+	h := sha256.New()
+	h.Write([]byte(s))
+
+	signature := hex.EncodeToString(h.Sum(nil))
+	content := signature[0:32]
+	key := []byte(content)
+
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		fmt.Println(err)
+		return "", 300, errors.New("invalid decrypt key")
+	}
+
+	blockSize := block.BlockSize()
+	plaintext = PKCS5Padding(plaintext, blockSize)
+	iv := []byte(ivDefValue)
+	blockMode := cipher.NewCBCEncrypter(block, iv)
+
+	ciphertext := make([]byte, len(plaintext))
+	blockMode.CryptBlocks(ciphertext, plaintext)
+	pass64 := base64.StdEncoding.EncodeToString(ciphertext)
+	return pass64, 200, nil
+}
+
+//ASEDecrypt 数据解密
+func ASEDecrypt(data string, openid string) ([]byte, int, error) {
+
+	//查询数据库，key的值
 	s := openid
 	h := sha256.New()
 	h.Write([]byte(s))
@@ -65,42 +94,16 @@ func ASEEncrypt(plaintext []byte, openid string) ([]byte, int, error) {
 	}
 
 	blockSize := block.BlockSize()
-	plaintext = PKCS5Padding(plaintext, blockSize)
-	iv := []byte(ivDefValue)
-	blockMode := cipher.NewCBCEncrypter(block, iv)
 
-	ciphertext := make([]byte, len(plaintext))
-	blockMode.CryptBlocks(ciphertext, plaintext)
-
-	return ciphertext, 200, nil
-}
-
-//ASEDecrypt 数据解密
-func ASEDecrypt(ciphertext []byte, openid string) (string, int, error) {
-
-	//查询数据库，key的值
-	s := openid
-	h := sha256.New()
-	h.Write([]byte(s))
-
-	signature := hex.EncodeToString(h.Sum(nil))
-	content := signature[0:32]
-	key := []byte(content)
-
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return "", 300, errors.New("invalid decrypt key")
-	}
-
-	blockSize := block.BlockSize()
+	ciphertext, err := base64.StdEncoding.DecodeString(data)
 
 	if len(ciphertext) < blockSize {
-		return "", 300, errors.New("ciphertext too short")
+		return nil, 300, errors.New("ciphertext too short")
 	}
 
 	iv := []byte(ivDefValue)
 	if len(ciphertext)%blockSize != 0 {
-		return "", 300, errors.New("ciphertext is not a multiple of the block size")
+		return nil, 300, errors.New("ciphertext is not a multiple of the block size")
 	}
 
 	blockModel := cipher.NewCBCDecrypter(block, iv)
@@ -109,8 +112,8 @@ func ASEDecrypt(ciphertext []byte, openid string) (string, int, error) {
 	blockModel.CryptBlocks(plaintext, ciphertext)
 	plaintext = PKCS5UnPadding(plaintext)
 	if plaintext == nil {
-		return "", 400, nil
+		return nil, 400, nil
 	}
-	pass64 := base64.StdEncoding.EncodeToString(plaintext)
-	return pass64, 200, nil
+
+	return []byte(plaintext), 200, nil
 }
